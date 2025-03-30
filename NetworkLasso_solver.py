@@ -6,23 +6,12 @@ import NGroupFL
 import time
 from libGroupFL import *
 
-# G: for now, fully connected graph
+
 def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
-    '''
-    Purpose: solve the Network Lasso Problem using novel approach
-    Parameters:
-        y = observed value in the dataset, probably corresponds to w in the pgd file -> there are n nodes, value at each node is p-dimensional
-        G = graph
-        w = parameter for the proximal operator, formula = y[i-1] - t * grad_g(y[i-1]) -> find more in pgd.py 
-          -> this variable is related to x, which is the minimizing variable
-        others = parameters for fine tuning
-    Return: 
-        x - minimized value of the optimization problem
-    '''
     # n: number of all nodes, p: dimension of data point
-    n, p = y.shape 
+    n, p = y.shape
     zeros = np.zeros((1, p))
-    x = np.zeros(y.shape) # -> initialize x, which has shape (n*p) -> corresponds to beta
+    x = np.zeros(y.shape)
 
     # initial u,z, z1[k] return z_ij for (i,j) in E
     z1 = np.zeros((len(G.edges()), p))
@@ -66,9 +55,7 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
                 rho = rho / 2
 
         t0 = time.time()
-        # print(f"y.shape: {y.shape}, expected (5, p)")
-        # print(f"G.nodes(): {list(G.nodes())}")
-        
+
         # update for x
         for node in G.nodes():
             temp = np.zeros((1, p))
@@ -90,8 +77,6 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
         # update for z1,z2
         tempz=np.concatenate((z1,z2))+0.0000
         # print('tempz:',tempz)
-
-        
 
         for k in range(len(Gedge)):
             i = Gedge[k][0]
@@ -120,9 +105,8 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
             s = np.linalg.norm(s_matrix)
             r = np.linalg.norm(r_matrix)
 
-        # objtemp = (np.linalg.norm(x - y))**2 #fi(xi) #y is stacked wi (n*p) #x is u: the minimized value
-        # print("norm x-y: ", np.linalg.norm(x-y, axis=1)**2)
-        objtemp = 0.5 * np.sum(np.linalg.norm(x-y)**2)
+        objtemp = 0.5 * np.sum(np.square(np.linalg.norm(x-y)))
+
         for node1, node2 in G.edges():
             objtemp = objtemp + lam * np.linalg.norm(x[node1] - x[node2])
 

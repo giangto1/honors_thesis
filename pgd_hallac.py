@@ -1,8 +1,21 @@
 import numpy as np
 from NetworkLasso_solver import solve_NetworkLasso
-# from NetworkLasso_solver_Hallac import solveX
+from NetworkLasso_solver_Hallac import runADMM
 import networkx as nx 
 import cvxpy as cp
+
+from snap import *
+from snap import TUNGraph
+from snap import TIntFltH
+from snap import TIntPr
+
+def nx_to_snap(Gnx):
+    Gsnap = TUNGraph.New()
+    for node in Gnx.nodes():
+        Gsnap.AddNode(node)
+    for u, v in Gnx.edges():
+        Gsnap.AddEdge(u, v)
+    return Gsnap
 
 def g(X,Y,B):
     return 0.5 * np.sum(np.square(Y - np.sum(X*B, axis=1)))
@@ -31,7 +44,30 @@ def proximal_gradient_descent(X, Y, B, Graph, alpha, lam, max_iters=2000):
         print(f"Iteration {i}, obj_cur {obj_cur:.6f}")
 
         deriv_g = grad_g(X, Y, B_cur)
-        proximal_operator = solve_NetworkLasso(B_cur - t * deriv_g, G=Graph, lam=t*lam) 
+
+
+
+        Gsnap = nx_to_snap(Graph)
+        n, p = B_cur.shape
+        rho = 1
+        numiters = 50
+        useConvex = 1
+        epsilon = 1e-3
+        mu = 1e-3
+        a = B_cur - t * deriv_g
+        x0 = np.copy(a).T  # runADMM expects shape (p, n)
+        u = np.zeros((p, 2 * Graph.number_of_edges()))
+        z = np.zeros((p, 2 * Graph.number_of_edges()))
+        edgeWeights = TIntFltH()
+        for u_, v_ in Graph.edges():
+            edgeWeights.AddDat(TIntPr(u_, v_), 1.0)
+
+        x_admm, _, _, _ = runADMM(Gsnap, p, p, t*lam, rho, numiters, x0, u, z, a.T, edgeWeights, useConvex, epsilon, mu)
+        proximal_operator = (x_admm.T, None)
+
+
+
+        # proximal_operator = solve_NetworkLasso(B_cur - t * deriv_g, G=Graph, lam=t*lam) 
         G = (B_cur - proximal_operator[0]) / t
         
         keepgoing = True
