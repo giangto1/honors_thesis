@@ -17,6 +17,8 @@ matplotlib.rc('text', usetex=True)
 # Other function in this folder
 from multiprocessing import Pool
 
+## EXTRA IMPORTS
+import networkx as nx
 
 def solveX(data):
     inputs = int(data[data.size - 1])
@@ -32,9 +34,7 @@ def solveX(data):
     # print("a in pool:",a)
 
     # Fill in objective function here! Params: Xnew (unknown), a (side data at node)
-    # g = sum_squares(xnew-a)+norm(xnew)
     g = sum_squares(xnew - a)
-
     h = 0
     for i in range(int(neighs.size / (2 * inputs + 1))):
         weight = neighs[i * (2 * inputs + 1)]
@@ -58,7 +58,13 @@ def solveX(data):
             objective = Minimize(52 * g + 50 * h)
             p = Problem(objective, constraints)
             result = p.solve(verbose=False)
-    # print(xnew.value, g.value)
+    g_values = []
+    # print("g value: ",g.value)
+    
+    #     g_values.append(i)
+    # g = np.array(g_values)
+    # total = np.sum(g) 
+    # print('g: ', np.sum(g.value))
     return xnew.value, g.value
 
 
@@ -263,3 +269,67 @@ def runADMM(G1, sizeOptVar, sizeData, lamb, rho, numiters, x, u, z, a, edgeWeigh
         objerror.append(np.absolute(obj[k] - obj[-1]))
 
     return x, tevolution, obj, objerror
+
+
+## ADDED CODE TO ORIGINAL CODE ##
+def g(X,Y,B):
+    return 0.5 * np.sum(np.square(Y - np.sum(X*B, axis=1)))
+
+def h(B, lam, G):
+    objtemp = 0
+    for node1, node2 in G.edges():
+        objtemp = objtemp + lam * np.linalg.norm(B[node1] - B[node2], ord=2)
+    return objtemp
+            
+
+def grad_g(X,Y,B):
+    grad = []
+    for i in range(len(B)):
+        grad.append((np.dot(X[i],B[i])-Y[i]) * X[i])
+    return np.array(grad)
+
+def nx_to_snap(Gnx):
+    Gsnap = TUNGraph.New()
+    for node in Gnx.nodes():
+        Gsnap.AddNode(node)
+    for u, v in Gnx.edges():
+        Gsnap.AddEdge(u, v)
+    return Gsnap
+
+if __name__ == '__main__':
+    n_nodes=5
+    p=3
+    np.random.seed(42)  # For reproducibility
+    
+    X = np.array([[ 0.49671415, -0.1382643,   0.64768854],[ 1.52302986, -0.23415337, -0.23413696],[ 1.57921282,  0.76743473, -0.46947439],[ 0.54256004, -0.46341769, -0.46572975],[ 0.24196227, -1.91328024, -1.72491783]])
+    
+    Y =np.array([-0.56228753, -1.01283112,  0.31424733, -0.90802408, -1.4123037 ])
+    
+    B = np.array([[ 1.46564877, -0.2257763,   0.0675282 ],[-1.42474819, -0.54438272,  0.11092259],[-1.15099358,  0.37569802, -0.60063869],[-0.29169375, -0.60170661,  1.85227818],[-0.01349722, -1.05771093,  0.82254491]])
+
+    G = nx.path_graph(n_nodes)  # Simple chain graph
+    lambda_= 0.1
+    Gsnap = nx_to_snap(G)
+    n, p = B.shape
+    rho = 1
+    numiters = 50
+    useConvex = 1
+    epsilon = 1e-3
+    mu = 1e-3
+    t = 1
+    deriv_g = grad_g(X, Y, B)
+    a = B - t * deriv_g
+    x0 = np.copy(a).T  # runADMM expects shape (p, n)
+    u = np.zeros((p, 2 * G.number_of_edges()))
+    z = np.zeros((p, 2 * G.number_of_edges()))
+    edgeWeights = TIntPrFltH()
+    for u_, v_ in G.edges():
+        edgeWeights.AddDat(TIntPr(u_, v_), 1.0)
+
+    x, tevolution, obj, objerror = runADMM(Gsnap, p, p, 2*t*lambda_, rho, numiters, x0, u, z, a.T, edgeWeights, useConvex, epsilon, mu)
+    proximal_operator = (x.T, None)
+    print(x)
+    # print(tevolution)
+    print(len(obj))
+    print(obj)
+    print("final obj: ", obj[-1])

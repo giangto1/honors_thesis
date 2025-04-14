@@ -105,11 +105,15 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
             s = np.linalg.norm(s_matrix)
             r = np.linalg.norm(r_matrix)
 
-        objtemp = 0.5 * np.sum(np.square(np.linalg.norm(x-y)))
+        # objtemp = 0.5 * (np.sum(x - y)**2)
+        # objtemp = np.sum(np.abs(x - y))
+        # objtemp = 0.5 * (np.linalg.norm(x - y))**2 # not the same output
+        objtemp = (np.linalg.norm(x - y))**2 # same output
+        # print('g: ', objtemp)
 
         for node1, node2 in G.edges():
-            objtemp = objtemp + lam * np.linalg.norm(x[node1] - x[node2])
-
+            objtemp = objtemp + (lam * (np.linalg.norm(x[node1] - x[node2])))
+            # objtemp += (rho / 2) * np.linalg.norm(x[node1] - x[node2]) ** 2
         obj.append(objtemp)
 
     tevolution = []
@@ -121,5 +125,49 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
 
     for k in range(len(obj)):
         objerr.append(obj[k] - obj[-1])
-
+    # print('final obj', obj[-1])
     return x, obj, objerr, tevolution
+
+
+## ADDED CODE TO ORIGINAL CODE ##
+def g(X,Y,B):
+    return 0.5 * np.sum(np.square(Y - np.sum(X*B, axis=1)))
+
+def h(B, lam, G):
+    objtemp = 0
+    for node1, node2 in G.edges():
+        objtemp = objtemp + lam * np.linalg.norm(B[node1] - B[node2], ord=2)
+    return objtemp
+            
+
+def grad_g(X,Y,B):
+    grad = []
+    for i in range(len(B)):
+        grad.append((np.dot(X[i],B[i])-Y[i]) * X[i])
+    return np.array(grad)
+
+if __name__ == '__main__':
+    n_nodes=5
+    p=3
+    np.random.seed(42)  # For reproducibility
+    
+    X = np.array([[ 0.49671415, -0.1382643,   0.64768854],[ 1.52302986, -0.23415337, -0.23413696],[ 1.57921282,  0.76743473, -0.46947439],[ 0.54256004, -0.46341769, -0.46572975],[ 0.24196227, -1.91328024, -1.72491783]])
+    print("X: ", X)
+    print()
+    Y =[-0.56228753, -1.01283112,  0.31424733, -0.90802408, -1.4123037 ]
+    print("Y: ", Y)
+    print()
+    B = [[ 1.46564877, -0.2257763,   0.0675282 ],[-1.42474819, -0.54438272,  0.11092259],[-1.15099358,  0.37569802, -0.60063869],[-0.29169375, -0.60170661,  1.85227818],[-0.01349722, -1.05771093,  0.82254491]]
+    print("B: ", B)
+    print()
+    G = nx.path_graph(n_nodes)  # Simple chain graph
+    print("G: ", G)
+    print()
+    lambda_ = 0.1
+    t=1
+    deriv_g = grad_g(X, Y, B)
+    x, obj, tevolution, objerror = solve_NetworkLasso(B - t * deriv_g, G=G, lam=2*t*lambda_) 
+    print(x)
+    print(len(obj))
+    print(obj)
+    print("final obj different ver: ", obj[-1])

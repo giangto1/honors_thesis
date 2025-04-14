@@ -58,11 +58,11 @@ def proximal_gradient_descent(X, Y, B, Graph, alpha, lam, max_iters=2000):
         x0 = np.copy(a).T  # runADMM expects shape (p, n)
         u = np.zeros((p, 2 * Graph.number_of_edges()))
         z = np.zeros((p, 2 * Graph.number_of_edges()))
-        edgeWeights = TIntFltH()
+        edgeWeights = TIntPrFltH()
         for u_, v_ in Graph.edges():
             edgeWeights.AddDat(TIntPr(u_, v_), 1.0)
 
-        x_admm, _, _, _ = runADMM(Gsnap, p, p, t*lam, rho, numiters, x0, u, z, a.T, edgeWeights, useConvex, epsilon, mu)
+        x_admm, _, _, _ = runADMM(Gsnap, p, p, 2*t*lam, rho, numiters, x0, u, z, a.T, edgeWeights, useConvex, epsilon, mu)
         proximal_operator = (x_admm.T, None)
 
 
