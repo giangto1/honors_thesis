@@ -44,6 +44,7 @@ def proximal_gradient_descent(X, Y, B, Graph, alpha, lam, max_iters=2000):
     B_cur = np.array(B)
     iter_values = []
     while i < max_iters:
+        print('i: ', i)
         t = 1
         obj_cur = g(X,Y,B_cur) + h(B_cur, lam, Graph)
 
@@ -122,6 +123,7 @@ def proximal_gradient_descent_cvxpy(X, Y, B, Graph, alpha, lam, max_iters=2000):
     B_cur = np.array(B)
     iter_values = []
     while i < max_iters:
+        print("i: ", i)
         t = 1
         obj_cur = g(X,Y,B_cur) + h(B_cur, lam, Graph)
         deriv_g = grad_g(X, Y, B_cur)
