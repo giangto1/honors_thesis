@@ -47,9 +47,9 @@ def proximal_gradient_descent(X, Y, B, Graph, alpha, lam, max_iters=2000):
         print('i: ', i)
         t = 1
         obj_cur = g(X,Y,B_cur) + h(B_cur, lam, Graph)
-
+        print("obj: ", obj_cur)
         deriv_g = grad_g(X, Y, B_cur)
-        proximal_operator = solve_NetworkLasso(B_cur - t * deriv_g, G=Graph, lam=2*t*lam) 
+        proximal_operator = solve_NetworkLasso(B_cur - t * deriv_g, G=Graph, lam=2*t*lam, verbose=1) 
         G = (B_cur - proximal_operator[0]) / t
         
         keepgoing = True
@@ -126,8 +126,9 @@ def proximal_gradient_descent_cvxpy(X, Y, B, Graph, alpha, lam, max_iters=2000):
         print("i: ", i)
         t = 1
         obj_cur = g(X,Y,B_cur) + h(B_cur, lam, Graph)
+        print("obj: ", obj_cur)
         deriv_g = grad_g(X, Y, B_cur)
-        proximal_operator = proximal_step_cvxpy(B_cur - t * deriv_g, Graph=Graph, lambda_=2*t*lam) 
+        proximal_operator = proximal_step_cvxpy(B_cur - t * deriv_g, Graph=Graph, lambda_=2*t*lam, verbose=1) 
         G = (B_cur - proximal_operator) / t
         keepgoing = True
         while keepgoing:

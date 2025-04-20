@@ -41,12 +41,13 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
     r = 1
 
     # for t in range(maxsteps):
-    while (t <= maxsteps):
-        # while (t<=maxsteps) and (s>1e-6 or r>1e-6):
+    # while (t <= maxsteps):
+    while (t<=maxsteps) and (s>1e-6 or r>1e-6):
         sys.stdout.write('\r' + 'network_lasso_explicit_status:' +
                          str(int(100 * t / maxsteps)) + '%')
         t += 1
-
+        # print("r: ", r)
+        # print("s: ", s)
         # varying rho if verbose = 1
         if verbose:
             if r > 10 * s:
