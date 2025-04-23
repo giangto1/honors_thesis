@@ -84,8 +84,11 @@ def runADMM(G1, sizeOptVar, sizeData, lamb, rho, numiters, x, u, z, a, edgeWeigh
         counter = counter + 1
 
     # Stopping criteria
-    eabs = math.pow(10, -2)
-    erel = math.pow(10, -3)
+    eabs = math.pow(10, -4)
+    erel = math.pow(10, -4)
+    # original stopping criteria
+    # eabs = math.pow(10, -2)
+    # erel = math.pow(10, -3)
     (r, s, epri, edual, counter) = (1, 1, 0, 0, 0)
     A = np.zeros((2 * edges, nodes))
     for EI in G1.Edges():
@@ -296,6 +299,21 @@ def nx_to_snap(Gnx):
         Gsnap.AddEdge(u, v)
     return Gsnap
 
+import cvxpy as cp
+def proximal_step_cvxpy(y, Graph, lambda_):
+    n_nodes, p = y.shape
+    x = cp.Variable((n_nodes, p))
+    obj = cp.sum_squares(x - y)
+    reg = 0
+    for node1, node2 in Graph.edges():
+        reg += cp.norm(x[node1] - x[node2],2)
+    obj += lambda_ * reg
+
+    prob = cp.Problem(cp.Minimize(obj))
+    prob.solve(solver=cp.SCS, verbose=False)
+    return x.value
+
+
 if __name__ == '__main__':
     n_nodes=5
     p=3
@@ -325,11 +343,8 @@ if __name__ == '__main__':
     edgeWeights = TIntPrFltH()
     for u_, v_ in G.edges():
         edgeWeights.AddDat(TIntPr(u_, v_), 1.0)
-
+    start = time.time()
     x, tevolution, obj, objerror = runADMM(Gsnap, p, p, 2*t*lambda_, rho, numiters, x0, u, z, a.T, edgeWeights, useConvex, epsilon, mu)
-    proximal_operator = (x.T, None)
-    print(x)
+    hallac_time = time.time()-start
     # print(tevolution)
-    print(len(obj))
-    print(obj)
-    print("final obj: ", obj[-1])
+    print("hallac time: ", hallac_time)

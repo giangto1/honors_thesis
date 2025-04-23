@@ -42,7 +42,7 @@ def solve_NetworkLasso(y, G, maxsteps=100, rho=1, lam=0.5, verbose=0):
 
     # for t in range(maxsteps):
     # while (t <= maxsteps):
-    while (t<=maxsteps) and (s>1e-6 or r>1e-6):
+    while (t<=maxsteps) and (s>1e-4 or r>1e-4):
         sys.stdout.write('\r' + 'network_lasso_explicit_status:' +
                          str(int(100 * t / maxsteps)) + '%')
         t += 1
